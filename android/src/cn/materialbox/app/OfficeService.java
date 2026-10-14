@@ -1,7 +1,7 @@
 package cn.materialbox.app;
 import android.app.Service;import android.content.*;import android.os.*;import android.net.Uri;import android.content.res.AssetManager;import java.io.*;import java.util.concurrent.*;import org.json.*;import org.libreoffice.kit.*;
 
-/** One isolated process per conversion: native Office never shares state with media tasks. */
+/** Serial reusable Office engine in its own process, separate from media tasks. */
 public class OfficeService extends Service {
  private static final ExecutorService worker=Executors.newSingleThreadExecutor();
  private static Office office;
@@ -11,7 +11,7 @@ public class OfficeService extends Service {
   String[] children=getAssets().list(source);if(children!=null&&children.length>0){destination.mkdirs();for(String child:children)copyAssets(source+"/"+child,new File(destination,child));}
   else{destination.getParentFile().mkdirs();try(InputStream in=getAssets().open(source);OutputStream out=new FileOutputStream(destination)){byte[] b=new byte[65536];int n;while((n=in.read(b))!=-1)out.write(b,0,n);}}
  }
- private void convert(String raw,Messenger reply){Message response=Message.obtain(null,1);Bundle b=new Bundle();
+ private void convert(String raw,Messenger reply){Message response=Message.obtain(null,1);Bundle b=new Bundle();File normalized=null;
   try{
    JSONObject j=new JSONObject(raw);String input=j.getString("input"),output=j.getString("output"),format=j.getString("format");
    if((input.toLowerCase(java.util.Locale.ROOT).endsWith(".html")||input.toLowerCase(java.util.Locale.ROOT).endsWith(".htm"))&&format.equals("pdf")){PdfLocal.html(this,j);b.putBoolean("ok",true);b.putLong("bytes",new File(output).length());response.setData(b);reply.send(response);stopSelf();return;}
@@ -34,6 +34,12 @@ public class OfficeService extends Service {
    }
    LibreOfficeKit.init(this,data.getAbsolutePath());office=new Office(LibreOfficeKit.getLibreOfficeKitHandle());}
    java.nio.ByteBuffer documentHandle=Core.loadOffice(LibreOfficeKit.getLibreOfficeKitHandle(),Uri.fromFile(new File(input)).toString(),"Batch=true,MacroSecurityLevel=3,EnableMacrosExecution=false");
+   if(documentHandle==null){String ext=input.substring(input.lastIndexOf('.')+1).toLowerCase(java.util.Locale.ROOT);if(java.util.Arrays.asList("pptx","docx","xlsx").contains(ext)){
+    normalized=new File(getCacheDir(),"office-compat-"+java.util.UUID.randomUUID()+"."+ext);
+    JSONObject fixed=new JSONObject(Core.call("convert",new JSONObject().put("mode","office-package").put("input",input).put("output",normalized.getAbsolutePath()).put("format",ext).toString()));
+    if(!fixed.optBoolean("ok"))throw new IOException("文档载入失败，兼容性整理未完成："+fixed.optString("error"));
+    documentHandle=Core.loadOffice(LibreOfficeKit.getLibreOfficeKitHandle(),Uri.fromFile(normalized).toString(),"Batch=true,MacroSecurityLevel=3,EnableMacrosExecution=false");
+   }}
    Document doc=documentHandle==null?null:new Document(documentHandle);if(doc==null)throw new IOException("文档无法载入："+office.getError());
    try{
     int type=doc.getDocumentType();if(format.equals("docx")&&type!=Document.DOCTYPE_TEXT)throw new IOException("PDF 未被正确载入为可编辑文字文档");
@@ -45,6 +51,7 @@ public class OfficeService extends Service {
     b.putBoolean("ok",true);b.putLong("bytes",dst.length());
    }finally{doc.destroy();}
   }catch(Throwable e){b.putBoolean("ok",false);b.putString("error",e.getMessage()==null?e.toString():e.getMessage());}
+  if(normalized!=null)normalized.delete();
   response.setData(b);try{reply.send(response);}catch(RemoteException ignored){}
   stopSelf();
  }

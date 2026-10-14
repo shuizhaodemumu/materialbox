@@ -70,6 +70,7 @@ pub fn run_job(job: &Job) -> Result<Value> {
     let result = match job.mode.as_str() {
         "image" | "image-compress" => convert_image(&working),
         "document" => convert_document(&working),
+        "office-package" => normalize_office_package(&working),
         "pdf-split" => split_pdf(&working),
         "pdf-merge" => merge_pdf(&working),
         "image-pdf" => images_pdf(&working),
@@ -82,6 +83,34 @@ pub fn run_job(job: &Job) -> Result<Value> {
         let _ = fs::remove_file(tmp);
     }
     result.map(|r| json!({"output":job.output,"detail":r}))
+}
+// Rewrite only the ZIP envelope; preserve every OOXML part byte-for-byte.
+fn normalize_office_package(job: &Job) -> Result<Value> {
+    let main = match job.format.as_str() {
+        "pptx" => "ppt/presentation.xml", "docx" => "word/document.xml", "xlsx" => "xl/workbook.xml",
+        _ => return Err("兼容性整理仅支持 PPTX、DOCX 和 XLSX".into()),
+    };
+    if fs::metadata(&job.input).map_err(error)?.len() > 128 * 1024 * 1024 {return Err("文档较大，请拆分后再转换".into());}
+    let mut source = zip::ZipArchive::new(fs::File::open(&job.input).map_err(error)?).map_err(error)?;
+    if source.len()>20000 {return Err("文档包含过多组件，请拆分后转换".into());}
+    for required in ["[Content_Types].xml", "_rels/.rels", main] {source.by_name(required).map_err(|_|format!("Office 文档缺少必要组件：{required}"))?;}
+    let mut output=zip::ZipWriter::new(fs::File::create(&job.output).map_err(error)?);
+    let options=zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let mut total=0u64;let mut names=std::collections::HashSet::new();let mut count=0;
+    for index in 0..source.len() {
+        let mut entry=source.by_index(index).map_err(error)?;
+        if entry.is_dir(){continue;}
+        let name=entry.name().to_owned();
+        if entry.enclosed_name().is_none()||!names.insert(name.clone()){return Err("Office 包含不安全或重复组件路径".into());}
+        total=total.checked_add(entry.size()).ok_or("文档解压大小无效")?;
+        if total>256*1024*1024 {return Err("文档解压后过大，请拆分后转换".into());}
+        output.start_file(&name,options).map_err(error)?;
+        let size=entry.size();let copied=std::io::copy(&mut entry.by_ref().take(size+1),&mut output).map_err(error)?;
+        if copied!=size {return Err("Office 组件大小不一致，可能已损坏".into());}
+        count+=1;
+    }
+    output.finish().map_err(error)?;
+    Ok(json!({"parts":count,"uncompressedBytes":total,"contentPreserved":true}))
 }
 pub fn detect(path: &str) -> Result<Value> {
     let mut f = fs::File::open(path).map_err(error)?;
@@ -925,4 +954,18 @@ mod tests {
         assert!(media_plan(&j).is_err());
         fs::remove_dir_all(root).unwrap();
     }
+    #[test]
+    fn office_package_preserves_parts_and_blocks_unsafe_paths(){
+        let root=std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());fs::create_dir_all(&root).unwrap();
+        let input=root.join("input.pptx");let mut writer=zip::ZipWriter::new(fs::File::create(&input).unwrap());let opt=zip::write::SimpleFileOptions::default();
+        writer.add_directory("ppt/",opt).unwrap();
+        let parts=[("[Content_Types].xml",b"types".as_slice()),("_rels/.rels",b"rels".as_slice()),("ppt/presentation.xml",b"presentation".as_slice()),("ppt/slides/media/a.png",b"\x89PNGbinary\x00".as_slice())];
+        for (name,data) in parts {writer.start_file(name,opt).unwrap();writer.write_all(data).unwrap();}writer.finish().unwrap();
+        let job=Job{mode:"office-package".into(),input:input.to_string_lossy().into_owned(),output:root.join("normalized.pptx").to_string_lossy().into_owned(),format:"pptx".into(),..Default::default()};run_job(&job).unwrap();
+        let mut normalized=zip::ZipArchive::new(fs::File::open(&job.output).unwrap()).unwrap();assert_eq!(normalized.len(),parts.len());for (name,data) in parts {let mut got=Vec::new();normalized.by_name(name).unwrap().read_to_end(&mut got).unwrap();assert_eq!(got,data);}drop(normalized);
+        assert!(run_job(&job).is_err());
+        let mut writer=zip::ZipWriter::new(fs::File::create(&input).unwrap());for (name,data) in parts {writer.start_file(name,opt).unwrap();writer.write_all(data).unwrap();}writer.start_file("../outside",opt).unwrap();writer.write_all(b"x").unwrap();writer.finish().unwrap();
+        let bad=Job{output:root.join("bad.pptx").to_string_lossy().into_owned(),..job};assert!(run_job(&bad).is_err());assert!(!Path::new(&bad.output).exists());assert!(!Path::new(&format!("{}.partial",bad.output)).exists());fs::remove_dir_all(root).unwrap();
+    }
+
 }
