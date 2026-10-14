@@ -1,0 +1,42 @@
+[
+  {
+    "file": "bcpkix-jdk15to18.jar",
+    "bytes": 1022720,
+    "sha256": "d9b97477b72499bcee02f5a906510810257ff36a94bf69fbca0b1e65e7ffdb6e"
+  },
+  {
+    "file": "bcprov-jdk15to18.jar",
+    "bytes": 9342484,
+    "sha256": "ea66ea8a450810b2193e8bf9a7ad3e46307c9896224c0f407d1b7d96ba1221cc"
+  },
+  {
+    "file": "bcutil-jdk15to18.jar",
+    "bytes": 677620,
+    "sha256": "d92184bdeb3105a11ad9e36acbd66b5f8eed091b08b9c8f3e2549e42b7f131f1"
+  },
+  {
+    "file": "ffmpeg.aar",
+    "bytes": 37307908,
+    "sha256": "0aa3e5f568274950a5524f336d9c141c539bc07a296ba5ec7fd42f098cd3a244"
+  },
+  {
+    "file": "libreoffice-26.2.6.3-arm64.apk",
+    "bytes": 87682841,
+    "sha256": "751ac3836890b79a56801bf6d9a2788cda3761ab5131a4f0b6abfbad822bb475"
+  },
+  {
+    "file": "pdfbox.aar",
+    "bytes": 3254019,
+    "sha256": "30277f879cfd571db2a137582c95516a0d4ea6778e945519bc58ca93d57d88c7"
+  },
+  {
+    "file": "smart-exception-common.jar",
+    "bytes": 11156,
+    "sha256": "1cad0fb4dfa01755a014331b5ed199281d2c3fab5aca5c9d7abd0b41d0ec3f7b"
+  },
+  {
+    "file": "smart-exception.jar",
+    "bytes": 6154,
+    "sha256": "5b96aaa5f191dedbef72fb0c38f1a2b01807920afc0d92a75a2acd6e0cc7703c"
+  }
+]

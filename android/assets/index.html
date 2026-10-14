@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#F8F5FE"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'"><title>材料魔盒</title><link rel="stylesheet" href="style.css"></head>
+<body data-scene="home">
+ <div class="app">
+  <header><div class="brand"><img src="icon.png" alt="紫色小龙图标"><div><h1>材料魔盒</h1><p>让每一份材料，恰到好处</p></div></div><div class="header-actions"><span class="local-tag"><i></i> 本地处理</span><button id="desktop-exit" class="icon-button hidden" aria-label="退出软件">⏻</button></div></header>
+  <main>
+   <section id="home" class="page">
+    <div class="hero"><div><span class="eyebrow">YOUR EVERYDAY TOOLBOX</span><h2>材料整理，<em>轻松一点。</em></h2><p>转换格式 · 缩小体积 · 整理文档</p><button id="quick-image" class="hero-button">开始图片转换 <span>↗</span></button></div><img src="icon.png" alt="" class="hero-dragon"></div>
+    <div class="section-head"><h2>选择你要处理的材料</h2><span>离线也能用</span></div>
+    <label class="search"><span>⌕</span><input id="search" type="search" placeholder="搜索转换、压缩、PDF…" aria-label="搜索功能"></label>
+    <div class="chips" id="categories"><button class="active" data-cat="all">全部</button><button data-cat="video">视频</button><button data-cat="audio">音频</button><button data-cat="image">图片</button><button data-cat="document">文档</button></div>
+    <div id="cards" class="cards"></div><div id="no-results" class="empty hidden">没有找到对应功能，试试其他关键词。</div>
+    <p class="quiet-note">原始文件保留 · 转换完成后保存到你选择的位置</p>
+   </section>
+   <section id="tools" class="page hidden"><div class="page-title"><span class="eyebrow">SMALL TOOLS, BIG HELP</span><h2>随手工具</h2><p>让文字与数据，也变得整整齐齐。</p></div><div id="tool-cards" class="cards tool-grid"></div></section>
+   <section id="tasks" class="page hidden"><div class="section-head page-title"><div><span class="eyebrow">EVERYTHING IN ORDER</span><h2>任务记录</h2></div><button id="clear-tasks" class="text-button">清理记录</button></div><p class="muted">转换时可以切换页面，后台通知显示任务状态。</p><div id="task-list"></div></section>
+   <section id="about" class="page hidden">
+    <div class="page-title about-hero"><span class="eyebrow">OPEN SOURCE · OPEN HEART</span><h2>开源，让便利<br>属于每个人。</h2><p>材料魔盒 · 免费 · 开源 · 用心维护</p></div>
+    <article class="about-card"><span class="section-label">我们的初衷</span><h3>用技术，把事情变简单</h3><p>材料魔盒基于 GitHub 开源项目 <button class="inline-link" data-open="https://github.com/Gu-0312/FormatMaster-EN">FormatMaster-EN ↗</button> 二次开发，坚持完全开源、永久免费。</p><p>作者支持开源：编程与开发的意义，是为更多人带来便利，而不是利用技术与信息差收取费用。作者会尽力持续维护本项目，欢迎反馈、交流与参与。</p></article>
+    <article class="about-card"><span class="section-label">保持联系</span><h3>一起让魔盒更好用</h3><div id="contact-list" class="contact-list"></div></article>
+    <article class="about-card donation-card"><span class="section-label">一份心意</span><h3>感谢捐赠</h3><p>软件永久免费。你的支持，是继续维护的动力。</p><div class="qr-window"><img class="donation-qr" src="donation-qr.png" alt="微信捐赠二维码" width="509" height="540"></div><span class="qr-caption">截屏后，可在微信中从相册识别</span></article>
+    <footer class="about-footer">欢迎拷打联系</footer>
+   </section>
+  </main>
+  <nav aria-label="主导航"><button data-page="home" class="active"><span>▦</span>转换</button><button data-page="tools"><span>◇</span>工具</button><button data-page="tasks"><span>≡</span>任务 <b id="task-badge" class="hidden">0</b></button><button data-page="about"><span>♡</span>关于</button></nav>
+ </div>
+ <dialog id="converter"><div class="dialog-header"><div><span class="eyebrow" id="conversion-kicker">CONVERT</span><h2 id="conversion-title">图片转换</h2></div><button class="icon-button close-dialog" aria-label="关闭">×</button></div>
+  <div class="dialog-body"><p id="conversion-description" class="muted"></p><button id="pick-files" class="file-drop"><span class="upload-icon">＋</span><strong>选择材料</strong><small>支持选择多个文件</small></button><div id="selected-files"></div>
+  <form id="settings"><div class="form-grid"><label id="format-field">转换为<select id="format"></select></label><label id="quality-field">质量<select id="quality"><option value="2">均衡 · 推荐</option><option value="1">高质量</option><option value="3">小体积</option></select></label>
+  <label id="width-field">宽度（像素）<input id="width" type="number" min="0" max="8192" value="0"><small>0 为保持原始尺寸</small></label><label id="height-field">高度（像素）<input id="height" type="number" min="0" max="8192" value="0"><small>只填写一项时保持比例</small></label>
+  <label id="rotate-field">旋转<select id="rotate"><option value="0">不旋转</option><option value="90">顺时针 90°</option><option value="180">180°</option><option value="270">270°</option></select></label><label id="image-quality-field">JPEG 质量<input id="image-quality" type="number" min="1" max="100" value="85"><small>其他格式使用默认编码</small></label>
+  <label id="start-field">开始时间（秒）<input id="start" type="number" min="0" step="0.1" value="0"></label><label id="duration-field">时长（秒）<input id="duration" type="number" min="0" step="0.1" value="0"><small>0 为直到文件结束</small></label>
+  <label id="speed-field">速度<select id="speed"><option value="1">原速</option><option value="0.5">0.5 倍</option><option value="1.5">1.5 倍</option><option value="2">2 倍</option></select></label><label id="fps-field">帧率<input id="fps" type="number" min="0" max="120" value="0"><small>0 为保持原始帧率</small></label>
+  <label id="bitrate-field">码率（kbps）<select id="bitrate"><option value="192">192 · 推荐</option><option value="128">128</option><option value="256">256</option><option value="320">320</option></select></label><label id="volume-field">音量倍数<input id="volume" type="number" min="0.1" max="3" step="0.1" value="1"></label>
+  <label id="action-field">增强方式<select id="action"><option value="normalize">响度归一化</option><option value="volume">调整音量</option></select></label><label id="pages-field" class="wide">保留页码<input id="pages" placeholder="例如 1-3,5,7-10"><small>将选中页保存为一个新的 PDF</small></label>
+  </div><label id="copy-field" class="check"><input id="copy" type="checkbox">无损转封装（不重新编码）</label><label id="gray-field" class="check"><input id="gray" type="checkbox">转为灰度图片</label></form><div id="conversion-note" class="info-note"></div><div id="conversion-error" class="error hidden" role="alert"></div></div>
+  <div class="dialog-footer"><span id="file-count">还没有选择文件</span><button id="submit-job" class="primary" disabled>开始转换 <span>→</span></button></div>
+ </dialog>
+ <dialog id="tool-editor"><div class="dialog-header"><div><span class="eyebrow">TEXT & DATA</span><h2 id="tool-title"></h2></div><button class="icon-button close-dialog" aria-label="关闭">×</button></div><div class="dialog-body"><p id="tool-description" class="muted"></p><label>输入内容<textarea id="tool-input" rows="7" placeholder="在这里粘贴文字…" spellcheck="false"></textarea></label><div id="tool-options" class="form-grid"><label id="pattern-field">查找 / 正则表达式<input id="pattern"></label><label id="replacement-field">替换为<input id="replacement"></label><label id="from-field">输入进制<input id="from" type="number" min="2" max="36" value="10"></label><label id="to-field">输出进制<input id="to" type="number" min="2" max="36" value="16"></label></div><div class="section-head result-heading"><label for="tool-output">处理结果</label><button id="copy-result" class="text-button">复制结果</button></div><textarea id="tool-output" rows="7" readonly placeholder="结果会显示在这里" spellcheck="false"></textarea><div id="tool-error" class="error hidden" role="alert"></div></div><div class="dialog-footer"><span>文字处理在本地完成</span><button id="run-tool" class="primary">处理文字 →</button></div></dialog>
+ <dialog id="pdf-hub"><div class="dialog-header"><div><span class="eyebrow">PDF · DOCUMENTS</span><h2>PDF转换</h2></div><button class="icon-button close-dialog" aria-label="关闭">×</button></div><div class="dialog-body"><p class="muted">在手机本地处理，优先保留页面、字体、图片和表格排版。</p><div id="pdf-options" class="cards"></div><div class="info-note">文字型 PDF 转 Word / PPT 输出可编辑内容；PDF 本身没有原始文档的段落和表格结构，复杂版式或缺失字体可能有差异，建议转换后检查。扫描 PDF 当前不支持离线 OCR。</div></div></dialog>
+ <div id="toast" role="status" aria-live="polite"></div>
+ <input type="file" id="desktop-files" multiple hidden class="hidden">
+ <script src="contacts.js"></script><script src="app.js"></script>
+</body></html>

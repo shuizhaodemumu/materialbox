@@ -1,0 +1,12 @@
+/core/target/
+/build/
+/work/
+/outputs/
+/local/
+__pycache__/
+*.p12
+*.jks
+*.keystore
+*.apk
+*.idsig
+.env
