@@ -18,10 +18,14 @@ UI tests: `npm install`, `npx playwright-core install chromium`, `npm test`. Set
 
 ## 0.4.0 offline speech build
 
-Use Python 3.12+, CMake, Ninja and Android NDK r27c. Set ANDROID_NDK_HOME. Run `python prepare-speech-deps.py` to download and verify the official sherpa-onnx v1.13.8 Android libraries, SenseVoice INT8 2025-09-09 model, tokens and Silero VAD. `--cache-dir PATH` reuses already downloaded archives. Downloads occur on the build computer only. The final Android application has no Internet permission.
+Use Python 3.12+, CMake, Ninja and Android NDK r27c. Set ANDROID_NDK_HOME. Run `python prepare-speech-deps.py` to download and verify the official sherpa-onnx v1.13.8 Android libraries, SenseVoice INT8 2025-09-09 model, tokens and Silero VAD. `--cache-dir PATH` reuses already downloaded archives. Downloads occur on the build computer only. Version 0.4.0 had no Internet permission; 0.4.1 uses native Internet access only for user-requested GitHub updates. Conversion and speech stay offline.
 
 Run `./build-speech.ps1` (optional -CMake/-Ninja/-NdkRoot overrides), then build the Rust Android core and run `python build-apk.py`. The APK includes model.int8.onnx, tokens.txt and silero_vad.onnx; only the C API and ONNX Runtime arm64 shared libraries are packaged. The v1.13.8 C API header is vendored with its upstream license. OpenCC ver.1.1.9 character/phrase dictionaries and their provenance are under android/assets/opencc.
 
 `npm run test:speech` covers the mock speech UI. A debug build can run `adb shell am instrument -w cn.materialbox.app/cn.materialbox.app.SpeechChecks`; it creates synthetic app-owned fixtures and tests transcription, simplified output, utterance SRT timing, cancellation cleanup and silence rejection. Do not install a debug build over a personal production app for testing; use an isolated device/profile/package.
 
 The accepted SenseVoice trial ran 9 speech and 26 existing Android assertions; 0.4.0 retains identical Java/C++ recognizer code and model bytes. General accuracy, 4-hour stress and clean-machine builds are not claimed. See VALIDATION-0.4.0.md for release checks.
+
+## 0.4.1 updater
+
+`npm run test:update` tests the actual browser controls with mocked native events. Production networking is native-only and restricted to this repository's GitHub release metadata and APK asset URL. Release adds INTERNET and REQUEST_INSTALL_PACKAGES; no WebView network access is enabled. Update instrumentation used a separate same-key harness against a non-debug APK. See VALIDATION-0.4.1.md for controlled fixtures and remaining public end-to-end coverage.

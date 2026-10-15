@@ -58,7 +58,7 @@ if not passwordfile.exists():
  passwordfile.write_text(secrets.token_urlsafe(32),encoding='ascii')
 password=passwordfile.read_text(encoding='ascii').strip()
 if not key.exists():run([jdk/'bin/keytool.exe','-genkeypair','-keystore',key,'-storetype','PKCS12','-alias','materialbox','-keyalg','RSA','-keysize','3072','-validity','10000','-storepass',password,'-keypass',password,'-dname','CN=MaterialBox Local Release, O=MaterialBox, C=CN'])
-output=build/'device-debug.apk' if debug else workspace/'outputs/材料魔盒_0.4.0_Android_arm64.apk'
+output=build/'device-debug.apk' if debug else workspace/'outputs/材料魔盒_0.4.1_Android_arm64.apk'
 run([jdk/'bin/java.exe','-jar',bt/'lib/apksigner.jar','sign','--ks',key,'--ks-key-alias','materialbox','--ks-pass','file:'+str(passwordfile),'--out',output,aligned])
 run([jdk/'bin/java.exe','-jar',bt/'lib/apksigner.jar','verify','--verbose',output])
 run([bt/'zipalign.exe','-c','-P','16','4',output])

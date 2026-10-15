@@ -16,6 +16,7 @@ import java.util.concurrent.*;
 public class MainActivity extends Activity {
  private WebView web;private String exportId="";
  private final ExecutorService io=Executors.newSingleThreadExecutor();
+ private final AppUpdates.Listener updateListener=s->event("update",s);
  @Override public void onCreate(Bundle saved){super.onCreate(saved);
   Store.load(this);web=new WebView(this);web.setBackgroundColor(0xfff8f5fe);
   if((getApplicationInfo().flags&android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE)!=0)WebView.setWebContentsDebuggingEnabled(true);
@@ -24,12 +25,17 @@ public class MainActivity extends Activity {
   web.getSettings().setAllowFileAccessFromFileURLs(false);web.getSettings().setAllowUniversalAccessFromFileURLs(false);web.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
   web.addJavascriptInterface(new Bridge(),"Native");
   web.setWebViewClient(new WebViewClient(){@Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){return !r.getUrl().toString().equals("file:///android_asset/index.html");}@Override public WebResourceResponse shouldInterceptRequest(WebView v,WebResourceRequest r){if(!r.getUrl().toString().startsWith("file:///android_asset/"))return new WebResourceResponse("text/plain","UTF-8",new ByteArrayInputStream(new byte[0]));return null;}});
-  web.setWebChromeClient(new WebChromeClient());setContentView(web);
+  web.setWebChromeClient(new WebChromeClient());setContentView(web);AppUpdates.get(this).attach(updateListener);
   web.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());return insets.consumeSystemWindowInsets();});web.loadUrl("file:///android_asset/index.html");
  }
- private void event(String name,String data){runOnUiThread(()->{if(!isFinishing())web.evaluateJavascript("window.nativeEvent("+JSONObject.quote(name)+","+data+")",null);});}
+ private void event(String name,String data){runOnUiThread(()->{if(!isFinishing())web.evaluateJavascript("if(typeof window.nativeEvent===\"function\")window.nativeEvent("+JSONObject.quote(name)+","+data+")",null);});}
  private void fail(String msg){event("error",JSONObject.quote(msg));}
  public class Bridge {
+  @JavascriptInterface public String updateInfo(){return AppUpdates.get(MainActivity.this).snapshot();}
+  @JavascriptInterface public void checkUpdate(){AppUpdates.get(MainActivity.this).check();}
+  @JavascriptInterface public void downloadUpdate(){AppUpdates.get(MainActivity.this).download();}
+  @JavascriptInterface public void cancelUpdate(){AppUpdates.get(MainActivity.this).cancel();}
+  @JavascriptInterface public void installUpdate(){AppUpdates.get(MainActivity.this).install(MainActivity.this);}
   @JavascriptInterface public void transcript(String id){io.submit(()->{try{JSONObject t=Store.find(id);if(t==null||!"speech".equals(t.optString("mode"))||!"done".equals(t.optString("status")))throw new IOException("识别结果尚未完成");File f=resultFile(t);if(f.length()>2*1024*1024)throw new IOException("文字过长，请保存后查看");try(InputStream in=new FileInputStream(f);ByteArrayOutputStream out=new ByteArrayOutputStream()){MainActivity.copy(in,out,2*1024*1024);event("transcript",JSONObject.quote(out.toString("UTF-8")));}}catch(Exception e){fail(e.getMessage());}});}
   @JavascriptInterface public void openExternal(String raw){try{Uri uri=Uri.parse(raw);if(!"https".equals(uri.getScheme())||!"github.com".equals(uri.getHost())||uri.getUserInfo()!=null)throw new IllegalArgumentException("链接无效");runOnUiThread(()->{try{Intent browser=new Intent(Intent.ACTION_VIEW,uri);browser.addCategory(Intent.CATEGORY_BROWSABLE);startActivity(browser);}catch(Exception e){fail("没有可用的浏览器");}});}catch(Exception e){fail("链接无效");}}
 
@@ -53,5 +59,5 @@ public class MainActivity extends Activity {
  }
  private static void copy(InputStream in,OutputStream out,long limit)throws IOException{if(in==null||out==null)throw new IOException("无法打开文件");byte[] b=new byte[65536];long total=0;int n;while((n=in.read(b))!=-1){total+=n;if(total>limit)throw new IOException("文件超过大小限制");out.write(b,0,n);}out.flush();}
  @Override public void onBackPressed(){web.evaluateJavascript("window.goBack()",handled->{if("false".equals(handled))finish();});}
- @Override protected void onDestroy(){io.shutdown();web.removeJavascriptInterface("Native");web.destroy();super.onDestroy();}
+ @Override protected void onDestroy(){AppUpdates.get(this).detach(updateListener);io.shutdown();web.removeJavascriptInterface("Native");web.destroy();super.onDestroy();}
 }
