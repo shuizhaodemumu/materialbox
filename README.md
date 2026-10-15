@@ -43,3 +43,5 @@ PDF反向转换是几何重建：Word文字框与Word/PPT规则表格可编辑�
 部分第三方导出的PPTX虽能通过ZIP校验和XML解析，仍会被LibreOffice载入器拒绝。新增载入失败后的OOXML容器规范化重试：Rust逐字节保留所有文档/媒体部件，重写ZIP包装并删除目录记录，在手机内再次载入。原始导入文件保持不动，中间副本自动清理。
 
 一个实际5页演示稿已由“loadComponentFromURL returned an empty reference”恢复为正常PDF转换；检查了5页渲染结果。未确定到底是哪项ZIP兼容细节触发旧引擎拒绝，不能泛化为所有Tencent office文件均有问题。修复仅处理PPTX/DOCX/XLSX，兼容整理限原始128MB、解压256MB、最多20000部件，不会修改内部XML或重建幻灯片。
+
+0.4.1已追加同版本[更新缓存修复](UPDATE-CACHE-FIX-0.4.1.md)：清理本地测试残留引起的0.4.2假提示。已受影响设备可手动下载安装包覆盖；不会清空转换数据。

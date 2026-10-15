@@ -36,8 +36,33 @@ public final class AppUpdates {
  private AppUpdates(Context c){this(c,"app-updates",installedVersion(c),(file,data)->verify(file,data,c));}
  // Package-private seams for instrumentation: production always uses the constructor above.
  AppUpdates(Context c,String preferenceName,String installedVersion,Validator validator){context=c;downloads=(DownloadManager)c.getSystemService(Context.DOWNLOAD_SERVICE);prefs=c.getSharedPreferences(preferenceName,0);current=installedVersion;this.validator=validator;
-  try{info=new JSONObject(prefs.getString("state","{}"));downloadId=prefs.getLong("downloadId",-1);String s=info.optString("state");if(!info.optString("latest").isEmpty()&&compare(info.getString("latest"),current)<=0){removeDownload();info=new JSONObject();s="idle";}if(Arrays.asList("checking","verifying").contains(s))put("state",downloadId>=0?"downloading":"idle");if("ready".equals(s)){put("state","downloading");}put("current",current);if(info.optString("state").isEmpty())put("state","idle");if(downloadId>=0&&Arrays.asList("downloading","verifying").contains(info.optString("state")))startPolling();}catch(Exception e){info=new JSONObject();put("current",current);put("state","idle");}
+  try{
+   info=new JSONObject(prefs.getString("state","{}"));downloadId=prefs.getLong("downloadId",-1);
+   String saved=info.optString("state");
+   if(Arrays.asList("ready","downloading","verifying").contains(saved)&&validCachedDownload()){
+    put("state","downloading");put("message","正在恢复并核验上次下载…");put("current",current);emit();startPolling();
+   }else{resetCachedState();}
+  }catch(Exception e){resetCachedState();}
  }
+ private boolean validCachedDownload()throws Exception{
+  if(info.optInt("schema")!=2||!"github:shuizhaodemumu/materialbox".equals(info.optString("source"))||downloadId<0||compare(info.getString("latest"),current)<=0)return false;
+  // Reuse the exact production release parser: cache data cannot bypass URL/asset validation.
+  JSONObject asset=new JSONObject().put("name",info.getString("name")).put("state","uploaded").put("size",info.getLong("total")).put("digest",info.optString("digest","")).put("browser_download_url",info.getString("url"));
+  release(new JSONObject().put("tag_name",info.getString("tag")).put("assets",new JSONArray().put(asset)),current);
+  File file=new File(info.getString("file")).getCanonicalFile();if(!ownedUpdateFile(file))return false;
+  try(Cursor c=downloads.query(new DownloadManager.Query().setFilterById(downloadId))){
+   if(c==null||!c.moveToFirst()||!info.getString("url").equals(c.getString(c.getColumnIndexOrThrow(DownloadManager.COLUMN_URI))))return false;
+   int status=c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+   // DownloadManager has no local URI until a pending transfer creates its file.
+   String local=c.getString(c.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI));if(local!=null&&!file.equals(new File(Uri.parse(local).getPath()).getCanonicalFile()))return false;
+   return status!=DownloadManager.STATUS_FAILED&&(status!=DownloadManager.STATUS_SUCCESSFUL||(local!=null&&file.isFile()));
+  }
+ }
+ private boolean ownedUpdateFile(File file)throws IOException{return new File(context.getExternalFilesDir(null),"updates").getCanonicalFile().equals(file.getCanonicalFile().getParentFile());}
+ private void resetCachedState(){
+  if(info==null)info=new JSONObject();try{removeDownload();}catch(Exception ignored){}downloadId=-1;info=new JSONObject();put("state","idle");put("current",current);emit();
+ }
+
  private void put(String k,Object v){try{info.put(k,v);}catch(JSONException e){throw new IllegalStateException(e);}}
  public synchronized String snapshot(){return info.toString();}
  public void attach(Listener l){listener=l;emit();}
@@ -49,7 +74,7 @@ public final class AppUpdates {
  static JSONObject release(JSONObject data,String current)throws Exception{
   if(data.optBoolean("draft")||data.optBoolean("prerelease"))throw new IOException("此发行版不是正式版");
   String tag=data.getString("tag_name");version(tag);String v=tag.replaceFirst("^v","");
-  JSONObject result=new JSONObject().put("current",current).put("latest",v).put("state",compare(v,current)>0?"available":"current");
+  JSONObject result=new JSONObject().put("schema",2).put("source","github:shuizhaodemumu/materialbox").put("tag",tag).put("current",current).put("latest",v).put("state",compare(v,current)>0?"available":"current");
   JSONArray assets=data.getJSONArray("assets");JSONObject selected=null;String name="MaterialBox-"+v+"-arm64.apk";
   for(int i=0;i<assets.length();i++){JSONObject asset=assets.getJSONObject(i);if(name.equals(asset.optString("name"))&&"uploaded".equals(asset.optString("state"))){selected=asset;break;}}
   if(selected==null)throw new IOException("发行版尚未提供完整的 arm64 APK，请稍后重试");
@@ -77,7 +102,7 @@ public final class AppUpdates {
   if(status==DownloadManager.STATUS_SUCCESSFUL){stopPolling();verifying=true;state("verifying","下载完成，正在核验文件和签名…");worker.execute(()->{try{validator.validate(new File(info.getString("file")),info);synchronized(this){put("downloaded",new File(info.getString("file")).length());put("percent",100);state("ready","安装包已校验，可以安装新版本");}}catch(Exception e){synchronized(this){removeDownload();state("error","安装包校验失败："+readable(e));}}finally{synchronized(this){verifying=false;}}});return;}
   put("message",status==DownloadManager.STATUS_PAUSED?"下载已暂停，等待网络或系统恢复":"正在下载，可切换到其他页面");emit();
  }catch(Exception e){stopPolling();removeDownload();state("error",readable(e));}}
- private synchronized void removeDownload(){if(downloadId>=0)downloads.remove(downloadId);downloadId=-1;String path=info.optString("file");if(!path.isEmpty())new File(path).delete();info.remove("file");}
+ private synchronized void removeDownload(){if(downloadId>=0)downloads.remove(downloadId);downloadId=-1;String path=info.optString("file");if(!path.isEmpty())try{File file=new File(path);if(ownedUpdateFile(file))file.delete();}catch(IOException ignored){}info.remove("file");}
  public synchronized void cancel(){if(verifying){state("verifying","正在核验安装包，请稍候…");return;}if(installPending)return;boolean ready="ready".equals(info.optString("state"));if(!ready&&!"downloading".equals(info.optString("state")))return;stopPolling();removeDownload();state("cancelled",ready?"安装包已删除，可以重新检查更新":"下载已取消，可以重新检查更新");}
  static String readable(Exception e){return e.getMessage()==null?"网络不可用，请稍后重试":e.getMessage();}
  static android.content.pm.Signature[] signatures(PackageInfo p){return Build.VERSION.SDK_INT>=28?(p.signingInfo==null?null:p.signingInfo.getApkContentsSigners()):p.signatures;}
