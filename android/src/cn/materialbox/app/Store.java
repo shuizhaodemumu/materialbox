@@ -20,7 +20,7 @@ public final class Store {
  public static synchronized String enqueue(Context c,JSONObject request)throws Exception{
   load(c);if(tasks.size()>=200)throw new IOException("任务记录已满，请清理已完成任务");
   if(request.optString("input").isEmpty())throw new IOException("请选择文件");
-  String mode=request.optString("mode");String id=UUID.randomUUID().toString();String format=request.optString("format");if(!format.matches("[a-z0-9]{1,8}"))throw new IOException("输出格式无效");
+  String mode=request.optString("mode");if("speech".equals(mode)&&(!java.util.Arrays.asList("txt","srt").contains(request.optString("format"))||!java.util.Arrays.asList("auto","zh","en").contains(request.optString("language","auto"))))throw new IOException("语音识别参数无效");String id=UUID.randomUUID().toString();String format=request.optString("format");if(!format.matches("[a-z0-9]{1,8}"))throw new IOException("输出格式无效");
   request.put("output",new File(new File(c.getFilesDir(),"outputs"),id+"."+format).getAbsolutePath());
   // Only imported, app-private inputs can enter a job, even from the local WebView bridge.
   String root=new File(c.getFilesDir(),"inputs").getCanonicalPath()+File.separator;

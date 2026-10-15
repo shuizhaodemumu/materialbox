@@ -21,13 +21,15 @@ public class ConversionService extends Service {
  private void drain(){
   wake=((PowerManager)getSystemService(POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"materialbox:convert");wake.acquire(6*60*60*1000L);
   try{while(true){JSONObject next=null;synchronized(Store.class){for(int i=Store.tasks.size()-1;i>=0;i--){JSONObject t=Store.tasks.get(i);if("queued".equals(t.optString("status"))){next=t;current=t;cancelled=false;Store.update(this,next,"running","正在转换");break;}}}
-   if(next==null)break;process(next);current=null;
+   if(next==null)break;SpeechEngine.reset();process(next);current=null;
   }}finally{if(wake!=null&&wake.isHeld())wake.release();new Handler(getMainLooper()).post(()->{synchronized(Store.class){for(JSONObject t:Store.tasks)if("queued".equals(t.optString("status"))){worker.submit(this::drain);return;}}synchronized(this){scheduled=false;}stopForeground(STOP_FOREGROUND_REMOVE);stopSelf();});}
  }
  private void process(JSONObject t){JSONObject req=t.optJSONObject("request");String mode=req.optString("mode"),output=req.optString("output");
   try{
    JSONObject r;
-   if(mode.startsWith("video")||mode.startsWith("audio")||mode.equals("gif")||mode.equals("frame")){
+   if(mode.equals("speech")){
+    SpeechEngine.convert(this,req,percent->{try{t.put("speechProgress",percent);}catch(Exception ignored){}},()->cancelled);if(cancelled)throw new CancellationException();
+   }else if(mode.startsWith("video")||mode.startsWith("audio")||mode.equals("gif")||mode.equals("frame")){
     r=new JSONObject(Core.call("plan",req.toString()));if(!r.optBoolean("ok"))throw new IOException(r.optString("error"));
     JSONArray a=r.getJSONObject("data").getJSONArray("args");String[] args=new String[a.length()];for(int i=0;i<a.length();i++)args[i]=a.getString(i);
     final JSONObject task=t;FFmpegKitConfig.enableStatisticsCallback(stats->Store.progress(task,(long)stats.getTime()));
@@ -50,10 +52,10 @@ public class ConversionService extends Service {
   catch(Throwable e){new File(output).delete();Store.update(this,t,"failed",e.getMessage()==null?"转换失败":e.getMessage());}
  }
  public static void cancel(Context c,String id){JSONObject t=Store.find(id);if(t==null)return;if("queued".equals(t.optString("status"))){Store.update(c,t,"cancelled","已取消");return;}c.sendBroadcast(new Intent("cn.materialbox.CANCEL").setPackage(c.getPackageName()).putExtra("id",id));}
- private final BroadcastReceiver cancelReceiver=new BroadcastReceiver(){public void onReceive(Context c,Intent i){if(current!=null&&current.optString("id").equals(i.getStringExtra("id"))){cancelled=true;FFmpegKit.cancel();}}};
+ private final BroadcastReceiver cancelReceiver=new BroadcastReceiver(){public void onReceive(Context c,Intent i){if(current!=null&&current.optString("id").equals(i.getStringExtra("id"))){cancelled=true;SpeechEngine.cancel();FFmpegKit.cancel();}}};
  @Override public void onDestroy(){try{unregisterReceiver(cancelReceiver);}catch(Exception ignored){}FFmpegKitConfig.enableStatisticsCallback(null);worker.shutdown();super.onDestroy();}
  @Override public IBinder onBind(Intent intent){return null;}
  @Override public void onTaskRemoved(Intent intent){super.onTaskRemoved(intent);}
- @Override public void onTimeout(int startId,int fgsType){cancelled=true;FFmpegKit.cancel();stopSelf();}
+ @Override public void onTimeout(int startId,int fgsType){cancelled=true;SpeechEngine.cancel();FFmpegKit.cancel();stopSelf();}
  @Override public void onStart(Intent intent,int startId){super.onStart(intent,startId);}
 }

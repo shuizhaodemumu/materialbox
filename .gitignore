@@ -10,3 +10,6 @@ __pycache__/
 *.apk
 *.idsig
 .env
+
+/build-speech/
+/android/assets/speech/*.onnx

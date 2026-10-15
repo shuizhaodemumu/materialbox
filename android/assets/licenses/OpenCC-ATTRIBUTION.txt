@@ -1,0 +1,4 @@
+OpenCC dictionaries, ver.1.1.9
+https://github.com/BYVoid/OpenCC
+Apache-2.0; see OpenCC-LICENSE.txt.
+Unmodified TSCharacters.txt and TSPhrases.txt; Java converter implemented independently for MaterialBox.

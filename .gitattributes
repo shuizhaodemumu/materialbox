@@ -5,3 +5,7 @@
 *.docx binary
 *.pptx binary
 *.xlsx binary
+*.wav binary
+# Keep pinned dictionary/token bytes identical to their published hashes.
+/android/assets/opencc/*.txt -text
+/android/assets/speech/tokens.txt -text

@@ -38,5 +38,20 @@
     "file": "smart-exception.jar",
     "bytes": 6154,
     "sha256": "5b96aaa5f191dedbef72fb0c38f1a2b01807920afc0d92a75a2acd6e0cc7703c"
+  },
+  {
+    "file": "speech/sherpa-onnx-v1.13.8-android.tar.bz2",
+    "bytes": 46093321,
+    "sha256": "2ff63469a71cb6009aa2e3ed5f4a670f8abdcbe4bb9ffd23776afc792a6b4f44"
+  },
+  {
+    "file": "speech/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09.tar.bz2",
+    "bytes": 165783878,
+    "sha256": "7305f7905bfcf77fa0b39388a313f3da35c68d971661a65475b56fb2162c8e63"
+  },
+  {
+    "file": "speech/silero_vad.onnx",
+    "bytes": 643854,
+    "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
   }
 ]

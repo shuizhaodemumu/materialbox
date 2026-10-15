@@ -15,3 +15,9 @@ body{--scene:url("background-home.png")}body[data-scene=tools]{--scene:url("back
 .donation-qr{border-radius:0}
 
 .qr-window{position:relative;width:min(100%,260px);aspect-ratio:1;margin:18px auto 14px;overflow:hidden;background:#fff}.qr-window .donation-qr{position:absolute;max-width:none;width:146.2643678%;height:auto;left:-23.8505747%;top:-22.7011494%;margin:0;border-radius:0}[data-contact=wechat] .contact-icon{background:#e9f5ec;color:#66a17a}
+
+/* H3 still is intentionally faint; controls and text retain full opacity. */
+.speech-intro{position:relative;isolation:isolate;overflow:hidden;border:1px solid #e8dff5;border-radius:18px;padding:16px 18px;margin:0 0 16px;background:#faf7ff;min-height:78px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.speech-intro:before{content:"";position:absolute;inset:0;z-index:-1;background:url(background-speech.png) right center/cover no-repeat;opacity:.20}
+.speech-intro strong{font-size:17px;color:#574166}.speech-intro small{font-size:11px;color:#756083}
+#speech-settings{margin:0 0 16px}#transcript-text{width:100%;box-sizing:border-box;line-height:1.8;min-height:280px;resize:vertical}

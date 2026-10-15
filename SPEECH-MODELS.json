@@ -1,0 +1,14 @@
+{
+  "model.int8.onnx": {
+    "bytes": 237115547,
+    "sha256": "12ca1a2ae7ecf3e0019ef2822307ee0b5cadc9196569e379b4c4026f8205276d"
+  },
+  "silero_vad.onnx": {
+    "bytes": 643854,
+    "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+  },
+  "tokens.txt": {
+    "bytes": 315894,
+    "sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc"
+  }
+}

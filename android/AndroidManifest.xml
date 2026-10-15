@@ -1,17 +1,17 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.materialbox.app" android:versionCode="4" android:versionName="0.3.1">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.materialbox.app" android:versionCode="5" android:versionName="0.4.0">
  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35"/>
  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
  <uses-permission android:name="android.permission.WAKE_LOCK"/>
  <application android:label="材料魔盒" android:icon="@drawable/icon" android:roundIcon="@drawable/icon" android:theme="@style/AppTheme" android:allowBackup="false" android:usesCleartextTraffic="false" android:extractNativeLibs="true" android:supportsRtl="true">
-  <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden" android:windowSoftInputMode="adjustResize">
+  <activity android:name="cn.materialbox.app.MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden" android:windowSoftInputMode="adjustResize">
    <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
   </activity>
-  <service android:name=".ConversionService" android:exported="false" android:foregroundServiceType="dataSync"/>
-  <service android:name=".OfficeService" android:exported="false" android:process=":office"/>
-  <service android:name=".WordOfficeService" android:exported="false" android:process=":office_writer"/>
-  <service android:name=".PresentationOfficeService" android:exported="false" android:process=":office_impress"/>
-  <provider android:name=".OutputProvider" android:authorities="cn.materialbox.app.outputs" android:exported="false" android:grantUriPermissions="true"/>
+  <service android:name="cn.materialbox.app.ConversionService" android:exported="false" android:foregroundServiceType="dataSync"/>
+  <service android:name="cn.materialbox.app.OfficeService" android:exported="false" android:process=":office"/>
+  <service android:name="cn.materialbox.app.WordOfficeService" android:exported="false" android:process=":office_writer"/>
+  <service android:name="cn.materialbox.app.PresentationOfficeService" android:exported="false" android:process=":office_impress"/>
+  <provider android:name="cn.materialbox.app.OutputProvider" android:authorities="cn.materialbox.app.outputs" android:exported="false" android:grantUriPermissions="true"/>
  </application>
 </manifest>

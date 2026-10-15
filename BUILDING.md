@@ -2,7 +2,7 @@
 
 Rust stable; Android `aarch64-linux-android` target; Android NDK linker/sysroot configured via Cargo environment or `.cargo/config.toml`; JDK 17; Android platform35, build tools, and D8/R8 8.13.19. `MATERIALBOX_WINDRES` selects the Windows resource compiler.
 
-`cargo test --manifest-path core/Cargo.toml` runs 11 tests. `build-core.ps1 -Mode android` builds the JNI library. `build-apk.py` builds/signs the Android shell; `--debug` includes the app-owned instrumentation suite. Its generated key/password stay under ignored `work/signing` and are never published. A new local key cannot update the author's signed release APK.
+`cargo test --manifest-path core/Cargo.toml` runs 12 tests. `build-core.ps1 -Mode android` builds the JNI library. `build-apk.py` builds/signs the Android shell; `--debug` includes DeviceChecks and SpeechChecks. Its generated key/password stay under ignored `work/signing` and are never published. A new local key cannot update the author's signed release APK.
 
 Set `MATERIALBOX_ANDROID_TOOLS` to the Android tool root, optionally `MATERIALBOX_JDK`, `MATERIALBOX_BUILD_TOOLS` and `MATERIALBOX_ANDROID_JAR`. The tool root must contain r8-8.13.19.jar. Extract the following distributions into `work/deps`, matching build-apk.py's explicit paths:
 
@@ -15,3 +15,13 @@ Set `MATERIALBOX_ANDROID_TOOLS` to the Android tool root, optionally `MATERIALBO
 The released APK was compiled, signed and tested on the author's Windows toolchain. A clean-machine rebuild with these adapted environment paths has not been verified. This repository ships application source and notices, not the entire NDK, downloaded native engines or signing material.
 
 UI tests: `npm install`, `npx playwright-core install chromium`, `npm test`. Set PLAYWRIGHT_CHROME to an existing Chrome executable if preferred. Tests use a mock Native bridge; real conversion checks are Rust tests and tests/android/DeviceChecks.java in a debug APK.
+
+## 0.4.0 offline speech build
+
+Use Python 3.12+, CMake, Ninja and Android NDK r27c. Set ANDROID_NDK_HOME. Run `python prepare-speech-deps.py` to download and verify the official sherpa-onnx v1.13.8 Android libraries, SenseVoice INT8 2025-09-09 model, tokens and Silero VAD. `--cache-dir PATH` reuses already downloaded archives. Downloads occur on the build computer only. The final Android application has no Internet permission.
+
+Run `./build-speech.ps1` (optional -CMake/-Ninja/-NdkRoot overrides), then build the Rust Android core and run `python build-apk.py`. The APK includes model.int8.onnx, tokens.txt and silero_vad.onnx; only the C API and ONNX Runtime arm64 shared libraries are packaged. The v1.13.8 C API header is vendored with its upstream license. OpenCC ver.1.1.9 character/phrase dictionaries and their provenance are under android/assets/opencc.
+
+`npm run test:speech` covers the mock speech UI. A debug build can run `adb shell am instrument -w cn.materialbox.app/cn.materialbox.app.SpeechChecks`; it creates synthetic app-owned fixtures and tests transcription, simplified output, utterance SRT timing, cancellation cleanup and silence rejection. Do not install a debug build over a personal production app for testing; use an isolated device/profile/package.
+
+The accepted SenseVoice trial ran 9 speech and 26 existing Android assertions; 0.4.0 retains identical Java/C++ recognizer code and model bytes. General accuracy, 4-hour stress and clean-machine builds are not claimed. See VALIDATION-0.4.0.md for release checks.

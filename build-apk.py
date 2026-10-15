@@ -17,8 +17,8 @@ resources=build/'resources.apk'
 debug='--debug' in sys.argv
 manifest=root/'android/AndroidManifest.xml'
 if debug:
- tree=ET.parse(manifest);tree.getroot().find('application').set('{http://schemas.android.com/apk/res/android}debuggable','true');ET.SubElement(tree.getroot(),'instrumentation',{'{http://schemas.android.com/apk/res/android}name':'cn.materialbox.app.DeviceChecks','{http://schemas.android.com/apk/res/android}targetPackage':'cn.materialbox.app'});manifest=build/'debug-manifest.xml';tree.write(manifest,encoding='utf-8')
-args=[bt/'aapt2.exe','link','-o',resources,'--manifest',manifest,'-I',platform,'--java',generated,'--auto-add-overlay','--extra-packages','com.arthenica.ffmpegkit','-A',root/'android/assets','--min-sdk-version','26','--target-sdk-version','35']
+ tree=ET.parse(manifest);tree.getroot().find('application').set('{http://schemas.android.com/apk/res/android}debuggable','true');ET.SubElement(tree.getroot(),'instrumentation',{'{http://schemas.android.com/apk/res/android}name':'cn.materialbox.app.DeviceChecks','{http://schemas.android.com/apk/res/android}targetPackage':'cn.materialbox.app'});ET.SubElement(tree.getroot(),'instrumentation',{'{http://schemas.android.com/apk/res/android}name':'cn.materialbox.app.SpeechChecks','{http://schemas.android.com/apk/res/android}targetPackage':'cn.materialbox.app'});manifest=build/'debug-manifest.xml';tree.write(manifest,encoding='utf-8')
+args=[bt/'aapt2.exe','link','-o',resources,'--manifest',manifest,'-I',platform,'--java',generated,'--auto-add-overlay','--extra-packages','com.arthenica.ffmpegkit:cn.materialbox.app','-A',root/'android/assets','--min-sdk-version','26','--target-sdk-version','35']
 for p in compiled:args+=['-R',p]
 if debug:args+=['-A',root/'tests/fixtures']
 run(args)
@@ -45,6 +45,8 @@ with zipfile.ZipFile(unsigned,'w',zipfile.ZIP_DEFLATED) as z:
   for info in source.infolist():z.writestr(info.filename,source.read(info.filename),compress_type=info.compress_type)
  for p in dex.glob('*.dex'):z.write(p,p.name)
  z.write(core,'lib/arm64-v8a/libmaterialbox.so')
+ z.write(root/'build-speech/libmaterialbox_speech.so','lib/arm64-v8a/libmaterialbox_speech.so')
+ for name in ['libsherpa-onnx-c-api.so','libonnxruntime.so']:z.write(workspace/'work/deps/sherpa-android/jniLibs/arm64-v8a'/name,'lib/arm64-v8a/'+name)
  for p in (deps/'jni/arm64-v8a').glob('*.so'):z.write(p,'lib/arm64-v8a/'+p.name)
  for p in (workspace/'work/deps/libreoffice/lib/arm64-v8a').glob('*.so'):
   if p.name!='libc++_shared.so':z.write(p,'lib/arm64-v8a/'+p.name)
@@ -56,7 +58,7 @@ if not passwordfile.exists():
  passwordfile.write_text(secrets.token_urlsafe(32),encoding='ascii')
 password=passwordfile.read_text(encoding='ascii').strip()
 if not key.exists():run([jdk/'bin/keytool.exe','-genkeypair','-keystore',key,'-storetype','PKCS12','-alias','materialbox','-keyalg','RSA','-keysize','3072','-validity','10000','-storepass',password,'-keypass',password,'-dname','CN=MaterialBox Local Release, O=MaterialBox, C=CN'])
-output=build/'device-debug.apk' if debug else workspace/'outputs/材料魔盒_0.3.1_Android_arm64.apk'
+output=build/'device-debug.apk' if debug else workspace/'outputs/材料魔盒_0.4.0_Android_arm64.apk'
 run([jdk/'bin/java.exe','-jar',bt/'lib/apksigner.jar','sign','--ks',key,'--ks-key-alias','materialbox','--ks-pass','file:'+str(passwordfile),'--out',output,aligned])
 run([jdk/'bin/java.exe','-jar',bt/'lib/apksigner.jar','verify','--verbose',output])
 run([bt/'zipalign.exe','-c','-P','16','4',output])
