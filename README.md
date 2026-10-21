@@ -32,7 +32,7 @@ PDF反向转换是几何重建：Word文字框与Word/PPT规则表格可编辑�
 
 `core/` Rust核心；`android/` 原生桥接与界面；`native/` SenseVoice C API JNI桥；`templates/` OOXML空白模板；`tests/` 应用自身测试样本；`third-party-licenses/` 组件版权与许可；`DEPENDENCIES.json` 与 `SPEECH-MODELS.json` 记录构建依赖及模型摘要。模型权重不提交Git，构建前运行 `prepare-speech-deps.py`。
 
-应用源码以GPL-3.0-or-later发布，保留上游MIT及第三方许可；各组件依原许可，详见LICENSE与third-party-licenses。没有上传签名私钥、下载缓存或个人简历。
+当前主分支的材料魔盒源码以 MIT 发布；FormatMaster-EN 上游按其 MIT 许可并保留原版权与许可声明（见 `third-party-licenses/FormatMaster-MIT.txt`），其他第三方组件按各自许可使用，详见 `third-party-licenses/`。此前发布的 GPL-3.0-or-later 版本仍按其原许可执行。没有上传签名私钥、下载缓存或个人简历。
 
 ## 美术与协作
 
